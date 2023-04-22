@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use syn::{Data, DeriveInput, Fields, parse_macro_input};
+use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 #[proc_macro_derive(FromDir)]
 pub fn from_dir(input: TokenStream) -> TokenStream {
@@ -29,9 +29,8 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
     let expanded = quote::quote! {
         #[automatically_derived]
         impl #ident {
-            pub fn from_dir(dir: impl AsRef<std::path::Path>) -> std::io::Result<Self> {
+            pub fn from_dir(dir: impl AsRef<std::path::Path>) -> Result<Self, structfromdir::Error> {
                 use std::fs;
-                use std::io::Read;
                 use std::str::FromStr;
                 use std::any::TypeId;
 
@@ -39,14 +38,20 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 let string_type_id = TypeId::of::<String>();
 
                 #(
-                    let mut #field_idents: #field_types = {
-                        let mut data = fs::read_to_string(dir.join(stringify!(#field_idents)))?;
+                    let #field_idents: #field_types = {
+                        let path = dir.join(stringify!(#field_idents));
+                        let raw_data = fs::read_to_string(&path)?;
                         let data = if TypeId::of::<#field_types>() == string_type_id {
-                            &data
+                            &raw_data
                         } else {
-                            data.trim()
+                            raw_data.trim()
                         };
-                        #field_types::from_str(data).expect("TODO")
+                        #field_types::from_str(data)
+                            .map_err(|_| structfromdir::Error::Parse {
+                                file: path,
+                                input: raw_data,
+                                ty: stringify!(#field_types).to_string()
+                            })?
                     };
                 )*
 
