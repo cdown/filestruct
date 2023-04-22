@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, Data, DeriveInput, Fields};
+use syn::{parse_macro_input, Data, DeriveInput, Fields, PathArguments, Type};
 
 #[proc_macro_derive(FromDir)]
 pub fn from_dir(input: TokenStream) -> TokenStream {
@@ -14,6 +14,61 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
         _ => panic!("FromDir only supports structs"),
     };
 
+    let field_parsers = fields
+        .named
+        .iter()
+        .map(|f| {
+            let field_ident = f
+                .ident
+                .as_ref()
+                .expect("Named field should have an identifier");
+            let field_ty = &f.ty;
+
+            match field_ty {
+                Type::Path(type_path)
+                    if type_path.path.segments.last().unwrap().ident == "Option" =>
+                {
+                    let inner_ty = match &type_path.path.segments.last().unwrap().arguments {
+                        PathArguments::AngleBracketed(inner_ty) => &inner_ty.args[0],
+                        _ => panic!("Unsupported Option type"),
+                    };
+                    quote::quote! {
+                        let path = dir.join(stringify!(#field_ident));
+                        let #field_ident: #field_ty = {
+                            if let Ok(raw_data) = fs::read_to_string(path) {
+                                let data = if TypeId::of::<#inner_ty>() == string_type_id {
+                                    &raw_data
+                                } else {
+                                    raw_data.trim()
+                                };
+                                #inner_ty::from_str(data).ok()
+                            } else {
+                                None
+                            }
+                        };
+                    }
+                }
+                _ => {
+                    quote::quote! {
+                        let path = dir.join(stringify!(#field_ident));
+                        let raw_data = fs::read_to_string(&path)?;
+                        let data = if TypeId::of::<#field_ty>() == string_type_id {
+                            &raw_data
+                        } else {
+                            raw_data.trim()
+                        };
+                        let #field_ident: #field_ty = #field_ty::from_str(data)
+                            .map_err(|_| structfromdir::Error::Parse {
+                                file: path,
+                                input: raw_data,
+                                ty: stringify!(#field_ty).to_string()
+                            })?;
+                    }
+                }
+            }
+        })
+        .collect::<Vec<_>>();
+
     let field_idents = fields
         .named
         .iter()
@@ -23,8 +78,6 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 .expect("Named field should have an identifier")
         })
         .collect::<Vec<_>>();
-
-    let field_types = fields.named.iter().map(|f| &f.ty).collect::<Vec<_>>();
 
     let expanded = quote::quote! {
         #[automatically_derived]
@@ -37,23 +90,7 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 let dir = dir.as_ref();
                 let string_type_id = TypeId::of::<String>();
 
-                #(
-                    let #field_idents: #field_types = {
-                        let path = dir.join(stringify!(#field_idents));
-                        let raw_data = fs::read_to_string(&path)?;
-                        let data = if TypeId::of::<#field_types>() == string_type_id {
-                            &raw_data
-                        } else {
-                            raw_data.trim()
-                        };
-                        #field_types::from_str(data)
-                            .map_err(|_| structfromdir::Error::Parse {
-                                file: path,
-                                input: raw_data,
-                                ty: stringify!(#field_types).to_string()
-                            })?
-                    };
-                )*
+                #(#field_parsers)*
 
                 Ok(Self {
                     #(#field_idents),*

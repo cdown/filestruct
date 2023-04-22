@@ -13,17 +13,26 @@ use structfromdir::FromDir;
 #[derive(FromDir, Debug)]
 struct Files {
     capacity: u8,
-    energy_now: u64,
+    energy_now: Option<u64>,
+    does_not_exist: Option<u64>,
 }
 
 fn main() {
     let files = Files::from_dir("/sys/class/power_supply/BAT0");
-    println!("{:?}", files);
+    println!("{:#?}", files);
 }
 ```
 
 Results in:
 
 ```rust
-Ok(Files { capacity: 68, energy_now: 38780000 })
+Ok(
+    Files {
+        capacity: 67,
+        energy_now: Some(
+            38520000,
+        ),
+        does_not_exist: None,
+    },
+)
 ```
