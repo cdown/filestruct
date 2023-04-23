@@ -5,7 +5,7 @@ A Rust derive macro which permits reading struct values from a directory.
 Not ready for production use, still in heavy development and many things are
 not yet implemented or will unexpectedly blow up.
 
-# Usage
+## Usage
 
 ```rust
 use filestruct::FromDir;
@@ -38,4 +38,13 @@ Ok(
         ),
     },
 )
+```
+
+## Releases
+
+Releases are a little complicated because filestruct_derive and filestruct are
+separate crates. Use `cargo release`:
+
+```
+cargo release --execute -- minor
 ```
