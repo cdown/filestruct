@@ -1,6 +1,6 @@
 [package]
 name = "filestruct"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Chris Down <chris@chrisdown.name>"]
 description = "Read a directory into a Rust struct"
@@ -12,5 +12,5 @@ license = "MIT"
 rust-version = "1.56.1"
 
 [dependencies]
-filestruct_derive = { version = "0.1.0", path = "../filestruct_derive" }
+filestruct_derive = { version = "0.2.0", path = "../filestruct_derive" }
 thiserror = "1.0.40"

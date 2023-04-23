@@ -1,6 +1,6 @@
 [package]
 name = "filestruct_derive"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Chris Down <chris@chrisdown.name>"]
 description = "Derive macro to read a directory into a Rust struct"
