@@ -1,11 +1,13 @@
 use proc_macro::TokenStream;
 
+use std::path::PathBuf;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, LitBool, LitStr, PathArguments, Type};
 
 #[derive(Default)]
 struct FieldAttributes {
     filename: Option<String>,
     trim: bool,
+    relative_dir: Option<String>,
 }
 
 fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Error> {
@@ -22,6 +24,10 @@ fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Err
                     let value = meta.value()?;
                     let b: LitBool = value.parse()?;
                     attrs.trim = b.value();
+                } else if meta.path.is_ident("relative_dir") {
+                    let value = meta.value()?;
+                    let s: LitStr = value.parse()?;
+                    attrs.relative_dir = Some(s.value());
                 } else {
                     return Err(meta.error("unsupported attribute"));
                 }
@@ -56,9 +62,17 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 .expect("Named field should have an identifier");
             let field_ty = &f.ty;
             let attributes = get_attributes(f).expect("Invalid attributes");
-            let file_name = attributes
+            let mut file_name = attributes
                 .filename
                 .unwrap_or_else(|| field_ident.to_string());
+            if let Some(relative_dir) = attributes.relative_dir {
+                file_name = [relative_dir, file_name]
+                    .iter()
+                    .collect::<PathBuf>()
+                    .to_str()
+                    .unwrap()
+                    .to_owned();
+            }
             let trim_string = attributes.trim;
             match field_ty {
                 Type::Path(type_path)

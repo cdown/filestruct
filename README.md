@@ -19,6 +19,8 @@ struct Files {
     does_not_exist: Option<u32>,
     #[filestruct(file = "oom_score_adj")]
     does_not_exist_but_renamed: Option<u32>,
+    #[filestruct(relative_dir = "..", trim = true)]
+    uptime: String,
 }
 
 fn main() {
@@ -32,13 +34,14 @@ Results in:
 ```rust
 Ok(
     Files {
-        comm: "somecomm\n",
-        comm_trimmed: "somecomm",
+        comm: "pdm-bin\n",
+        comm_trimmed: "pdm-bin",
         oom_score: 800,
         does_not_exist: None,
         does_not_exist_but_renamed: Some(
             200,
         ),
+        uptime: "177405.74 822813.82",
     },
 )
 ```
