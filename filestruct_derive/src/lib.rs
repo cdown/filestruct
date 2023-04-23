@@ -2,8 +2,14 @@ use proc_macro::TokenStream;
 
 use syn::{parse_macro_input, Data, DeriveInput, Fields, LitStr, PathArguments, Type};
 
-fn get_file_attribute(field: &syn::Field) -> Result<Option<String>, syn::parse::Error> {
-    let mut filename = None;
+#[derive(Default)]
+struct FieldAttributes {
+    filename: Option<String>,
+    trim: bool,
+}
+
+fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Error> {
+    let mut attrs = FieldAttributes::default();
 
     for attr in &field.attrs {
         if attr.path().is_ident("filestruct") {
@@ -11,16 +17,18 @@ fn get_file_attribute(field: &syn::Field) -> Result<Option<String>, syn::parse::
                 if meta.path.is_ident("file") {
                     let value = meta.value()?;
                     let s: LitStr = value.parse()?;
-                    filename = Some(s.value());
-                    Ok(())
+                    attrs.filename = Some(s.value());
+                } else if meta.path.is_ident("trim") {
+                    attrs.trim = true;
                 } else {
-                    Err(meta.error("unsupported attribute"))
+                    return Err(meta.error("unsupported attribute"));
                 }
+                Ok(())
             })?;
         }
     }
 
-    Ok(filename)
+    Ok(attrs)
 }
 
 #[proc_macro_derive(FromDir, attributes(filestruct))]
@@ -45,8 +53,11 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 .as_ref()
                 .expect("Named field should have an identifier");
             let field_ty = &f.ty;
-            let file_name = get_file_attribute(f).expect("Invalid file attribute");
-            let file_name = file_name.unwrap_or_else(|| field_ident.to_string());
+            let attributes = get_attributes(f).expect("Invalid attributes");
+            let file_name = attributes
+                .filename
+                .unwrap_or_else(|| field_ident.to_string());
+            let trim_string = attributes.trim;
             match field_ty {
                 Type::Path(type_path)
                     if type_path.path.segments.last().unwrap().ident == "Option" =>
@@ -59,7 +70,8 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                         let path = dir.join(#file_name);
                         let #field_ident: #field_ty = {
                             if let Ok(raw_data) = fs::read_to_string(path) {
-                                let data = if TypeId::of::<#inner_ty>() == string_type_id {
+                                let data = if !#trim_string &&
+                                    TypeId::of::<#inner_ty>() == string_type_id {
                                     &raw_data
                                 } else {
                                     raw_data.trim()
@@ -75,7 +87,7 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                     quote::quote! {
                         let path = dir.join(#file_name);
                         let raw_data = fs::read_to_string(&path)?;
-                        let data = if TypeId::of::<#field_ty>() == string_type_id {
+                        let data = if !#trim_string && TypeId::of::<#field_ty>() == string_type_id {
                             &raw_data
                         } else {
                             raw_data.trim()
