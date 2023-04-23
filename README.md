@@ -12,15 +12,18 @@ use filestruct::FromDir;
 
 #[derive(FromDir, Debug)]
 struct Files {
-    capacity: u8,
-    energy_now: u64,
-    does_not_exist: Option<u64>,
-    #[filestruct(file = "energy_full")]
-    does_not_exist_but_renamed: Option<u64>,
+    comm: String,
+    #[filestruct(file = "comm", trim)]
+    comm_trimmed: String,
+    oom_score: u32,
+
+    does_not_exist: Option<u32>,
+    #[filestruct(file = "oom_score_adj")]
+    does_not_exist_but_renamed: Option<u32>,
 }
 
 fn main() {
-    let files = Files::from_dir("/sys/class/power_supply/BAT0");
+    let files = Files::from_dir("/proc/self");
     println!("{:#?}", files);
 }
 ```
@@ -30,11 +33,12 @@ Results in:
 ```rust
 Ok(
     Files {
-        capacity: 67,
-        energy_now: 38460000,
+        comm: "somecomm\n",
+        comm_trimmed: "somecomm",
+        oom_score: 800,
         does_not_exist: None,
         does_not_exist_but_renamed: Some(
-            56970000,
+            200,
         ),
     },
 )
