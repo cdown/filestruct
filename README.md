@@ -13,10 +13,9 @@ use filestruct::FromDir;
 #[derive(FromDir, Debug)]
 struct Files {
     comm: String,
-    #[filestruct(file = "comm", trim)]
+    #[filestruct(file = "comm", trim = true)]
     comm_trimmed: String,
     oom_score: u32,
-
     does_not_exist: Option<u32>,
     #[filestruct(file = "oom_score_adj")]
     does_not_exist_but_renamed: Option<u32>,

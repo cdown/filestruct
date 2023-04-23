@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 
-use syn::{parse_macro_input, Data, DeriveInput, Fields, LitStr, PathArguments, Type};
+use syn::{parse_macro_input, Data, DeriveInput, Fields, LitBool, LitStr, PathArguments, Type};
 
 #[derive(Default)]
 struct FieldAttributes {
@@ -19,7 +19,9 @@ fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Err
                     let s: LitStr = value.parse()?;
                     attrs.filename = Some(s.value());
                 } else if meta.path.is_ident("trim") {
-                    attrs.trim = true;
+                    let value = meta.value()?;
+                    let b: LitBool = value.parse()?;
+                    attrs.trim = b.value();
                 } else {
                     return Err(meta.error("unsupported attribute"));
                 }
