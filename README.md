@@ -1,4 +1,4 @@
-# structfromdir
+# filestruct
 
 A Rust derive macro which permits reading struct values from a directory.
 
@@ -8,7 +8,7 @@ not yet implemented or will unexpectedly blow up.
 # Usage
 
 ```rust
-use structfromdir::FromDir;
+use filestruct::FromDir;
 
 #[derive(FromDir, Debug)]
 struct Files {

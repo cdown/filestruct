@@ -6,7 +6,7 @@ fn get_file_attribute(field: &syn::Field) -> Result<Option<String>, syn::parse::
     let mut filename = None;
 
     for attr in &field.attrs {
-        if attr.path().is_ident("structfromdir") {
+        if attr.path().is_ident("filestruct") {
             attr.parse_nested_meta(|meta| {
                 if meta.path.is_ident("file") {
                     let value = meta.value()?;
@@ -23,7 +23,7 @@ fn get_file_attribute(field: &syn::Field) -> Result<Option<String>, syn::parse::
     Ok(filename)
 }
 
-#[proc_macro_derive(FromDir, attributes(structfromdir))]
+#[proc_macro_derive(FromDir, attributes(filestruct))]
 pub fn from_dir(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -81,7 +81,7 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                             raw_data.trim()
                         };
                         let #field_ident: #field_ty = #field_ty::from_str(data)
-                            .map_err(|_| structfromdir::Error::Parse {
+                            .map_err(|_| filestruct::Error::Parse {
                                 file: path,
                                 input: raw_data,
                                 ty: stringify!(#field_ty).to_string()
@@ -105,7 +105,7 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
     let expanded = quote::quote! {
         #[automatically_derived]
         impl #ident {
-            pub fn from_dir(dir: impl AsRef<std::path::Path>) -> Result<Self, structfromdir::Error> {
+            pub fn from_dir(dir: impl AsRef<std::path::Path>) -> Result<Self, filestruct::Error> {
                 use std::fs;
                 use std::str::FromStr;
                 use std::any::TypeId;

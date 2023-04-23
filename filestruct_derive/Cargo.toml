@@ -1,10 +1,10 @@
 [package]
-name = "structfromdir_derive"
+name = "filestruct_derive"
 version = "0.1.0"
 edition = "2021"
 authors = ["Chris Down <chris@chrisdown.name>"]
 description = "Derive macro to read from a directory into a Rust struct"
-repository = "https://github.com/cdown/structfromdir"
+repository = "https://github.com/cdown/filestruct"
 readme = "README.md"
 keywords = ["derive"]
 categories = ["filesystem"]
