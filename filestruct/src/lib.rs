@@ -12,6 +12,6 @@ pub enum Error {
         ty: String,
     },
 
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
+    #[error("{file}: {err}")]
+    Io { file: PathBuf, err: std::io::Error },
 }

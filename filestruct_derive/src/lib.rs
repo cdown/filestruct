@@ -88,7 +88,8 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 _ => {
                     quote::quote! {
                         let path = dir.join(#file_name);
-                        let raw_data = fs::read_to_string(&path)?;
+                        let raw_data = fs::read_to_string(&path)
+                            .map_err(|err| filestruct::Error::Io { file: path.clone(), err })?;
                         let data = if !#trim_string && TypeId::of::<#field_ty>() == string_type_id {
                             &raw_data
                         } else {
