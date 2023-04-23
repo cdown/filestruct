@@ -13,8 +13,10 @@ use filestruct::FromDir;
 #[derive(FromDir, Debug)]
 struct Files {
     capacity: u8,
-    energy_now: Option<u64>,
+    energy_now: u64,
     does_not_exist: Option<u64>,
+    #[filestruct(file = "energy_full")]
+    does_not_exist_but_renamed: Option<u64>,
 }
 
 fn main() {
@@ -29,10 +31,11 @@ Results in:
 Ok(
     Files {
         capacity: 67,
-        energy_now: Some(
-            38520000,
-        ),
+        energy_now: 38460000,
         does_not_exist: None,
+        does_not_exist_but_renamed: Some(
+            56970000,
+        ),
     },
 )
 ```
