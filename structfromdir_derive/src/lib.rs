@@ -1,7 +1,29 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, Data, DeriveInput, Fields, PathArguments, Type};
 
-#[proc_macro_derive(FromDir)]
+use syn::{parse_macro_input, Data, DeriveInput, Fields, LitStr, PathArguments, Type};
+
+fn get_file_attribute(field: &syn::Field) -> Result<Option<String>, syn::parse::Error> {
+    let mut filename = None;
+
+    for attr in &field.attrs {
+        if attr.path().is_ident("structfromdir") {
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("file") {
+                    let value = meta.value()?;
+                    let s: LitStr = value.parse()?;
+                    filename = Some(s.value());
+                    Ok(())
+                } else {
+                    Err(meta.error("unsupported attribute"))
+                }
+            })?;
+        }
+    }
+
+    Ok(filename)
+}
+
+#[proc_macro_derive(FromDir, attributes(structfromdir))]
 pub fn from_dir(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -23,7 +45,8 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 .as_ref()
                 .expect("Named field should have an identifier");
             let field_ty = &f.ty;
-
+            let file_name = get_file_attribute(f).expect("Invalid file attribute");
+            let file_name = file_name.unwrap_or_else(|| field_ident.to_string());
             match field_ty {
                 Type::Path(type_path)
                     if type_path.path.segments.last().unwrap().ident == "Option" =>
@@ -33,7 +56,7 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                         _ => panic!("Unsupported Option type"),
                     };
                     quote::quote! {
-                        let path = dir.join(stringify!(#field_ident));
+                        let path = dir.join(#file_name);
                         let #field_ident: #field_ty = {
                             if let Ok(raw_data) = fs::read_to_string(path) {
                                 let data = if TypeId::of::<#inner_ty>() == string_type_id {
@@ -50,7 +73,7 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 }
                 _ => {
                     quote::quote! {
-                        let path = dir.join(stringify!(#field_ident));
+                        let path = dir.join(#file_name);
                         let raw_data = fs::read_to_string(&path)?;
                         let data = if TypeId::of::<#field_ty>() == string_type_id {
                             &raw_data
