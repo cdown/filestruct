@@ -21,6 +21,18 @@ fn bare() {
 }
 
 #[test]
+fn err_doesnt_exist() {
+    #[allow(dead_code)]
+    #[derive(FromDir)]
+    struct F {
+        does_not_exist: u64,
+    }
+
+    let f = F::from_dir(get_test_dir());
+    assert!(matches!(f, Err(filestruct::Error::Io { .. })));
+}
+
+#[test]
 fn attr_file() {
     #[derive(FromDir)]
     struct F {
