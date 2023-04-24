@@ -1,12 +1,14 @@
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
 
+use quote::ToTokens;
 use std::path::PathBuf;
 use syn::{parse_macro_input, Data, DeriveInput, Fields, LitBool, LitStr, PathArguments, Type};
 
 #[derive(Default)]
 struct FieldAttributes {
     filename: Option<String>,
-    trim: bool,
+    trim: Option<bool>,
     relative_dir: Option<String>,
 }
 
@@ -23,7 +25,7 @@ fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Err
                 } else if meta.path.is_ident("trim") {
                     let value = meta.value()?;
                     let b: LitBool = value.parse()?;
-                    attrs.trim = b.value();
+                    attrs.trim = Some(b.value());
                 } else if meta.path.is_ident("relative_dir") {
                     let value = meta.value()?;
                     let s: LitStr = value.parse()?;
@@ -37,6 +39,22 @@ fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Err
     }
 
     Ok(attrs)
+}
+
+fn make_trim_check(ty: impl ToTokens, explicit_trim: Option<bool>) -> TokenStream2 {
+    let use_dfl_bhvr = explicit_trim.is_none();
+    let trim = explicit_trim.unwrap_or(false);
+
+    quote::quote! {
+        match (#use_dfl_bhvr, TypeId::of::<#ty>() == TypeId::of::<String>(), #trim) {
+            (true, false, _) | (false, _, true) => {
+                raw_data.trim()
+            },
+            (true, true, _) | (false, _, false) => {
+                &raw_data
+            },
+        }
+    }
 }
 
 #[proc_macro_derive(FromDir, attributes(filestruct))]
@@ -73,7 +91,6 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                     .unwrap()
                     .to_owned();
             }
-            let trim_string = attributes.trim;
             match field_ty {
                 Type::Path(type_path)
                     if type_path.path.segments.last().unwrap().ident == "Option" =>
@@ -82,16 +99,12 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                         PathArguments::AngleBracketed(inner_ty) => &inner_ty.args[0],
                         _ => panic!("Unsupported Option type"),
                     };
+                    let trim_check = make_trim_check(inner_ty, attributes.trim);
                     quote::quote! {
                         let path = dir.join(#file_name);
                         let #field_ident: #field_ty = {
                             if let Ok(raw_data) = fs::read_to_string(path) {
-                                let data = if !#trim_string &&
-                                    TypeId::of::<#inner_ty>() == string_type_id {
-                                    &raw_data
-                                } else {
-                                    raw_data.trim()
-                                };
+                                let data = #trim_check;
                                 #inner_ty::from_str(data).ok()
                             } else {
                                 None
@@ -100,15 +113,12 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                     }
                 }
                 _ => {
+                    let trim_check = make_trim_check(field_ty, attributes.trim);
                     quote::quote! {
                         let path = dir.join(#file_name);
                         let raw_data = fs::read_to_string(&path)
                             .map_err(|err| filestruct::Error::Io { file: path.clone(), err })?;
-                        let data = if !#trim_string && TypeId::of::<#field_ty>() == string_type_id {
-                            &raw_data
-                        } else {
-                            raw_data.trim()
-                        };
+                        let data = #trim_check;
                         let #field_ident: #field_ty = #field_ty::from_str(data)
                             .map_err(|_| filestruct::Error::Parse {
                                 file: path,
@@ -140,8 +150,6 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 use std::any::TypeId;
 
                 let dir = dir.as_ref();
-                let string_type_id = TypeId::of::<String>();
-
                 #(#field_parsers)*
 
                 Ok(Self {
