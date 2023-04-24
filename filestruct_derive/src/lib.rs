@@ -142,7 +142,6 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
         .collect::<Vec<_>>();
 
     let expanded = quote::quote! {
-        #[automatically_derived]
         impl #ident {
             pub fn from_dir(dir: impl AsRef<std::path::Path>) -> Result<Self, filestruct::Error> {
                 use std::fs;
