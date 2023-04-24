@@ -124,3 +124,15 @@ fn attr_trim_false() {
         StealthyString("ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎\n".to_string())
     );
 }
+
+#[test]
+fn relative_dir() {
+    #[derive(FromDir)]
+    struct F {
+        #[filestruct(relative_dir = "inner")]
+        t_string_ok: String,
+    }
+
+    let f = F::from_dir(get_test_dir()).unwrap();
+    assert_eq!(f.t_string_ok, "inner\n");
+}
