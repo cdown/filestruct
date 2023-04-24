@@ -21,6 +21,21 @@ fn bare() {
 }
 
 #[test]
+fn option() {
+    #[derive(FromDir)]
+    struct F {
+        t_u64_ok: Option<u64>,
+        t_string_ok: Option<String>,
+        t_string_ok_chomp: Option<String>,
+    }
+
+    let f = F::from_dir(get_test_dir()).unwrap();
+    assert_eq!(f.t_u64_ok, Some(u64::MAX));
+    assert_eq!(f.t_string_ok, Some("ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎\n".to_string()));
+    assert_eq!(f.t_string_ok_chomp, Some("ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎".to_string()));
+}
+
+#[test]
 fn err_doesnt_exist() {
     #[allow(dead_code)]
     #[derive(FromDir)]
