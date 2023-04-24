@@ -14,4 +14,7 @@ pub enum Error {
 
     #[error("{file}: {err}")]
     Io { file: PathBuf, err: std::io::Error },
+
+    #[error(transparent)]
+    IoPlain(#[from] std::io::Error),
 }

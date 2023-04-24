@@ -83,6 +83,16 @@ fn trim_string() {
     assert_eq!(f.t_string_ok, "ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎");
 }
 
+#[test]
+fn from_cwd() {
+    #[derive(FromDir)]
+    struct F {
+        t_string_ok: String,
+    }
+    std::env::set_current_dir(get_test_dir()).unwrap();
+    let f = F::from_cwd().unwrap();
+    assert_eq!(f.t_string_ok, "ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎\n");
+}
 #[derive(Debug, PartialEq, Eq)]
 struct StealthyString(String);
 
