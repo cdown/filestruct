@@ -83,21 +83,21 @@ fn trim_string() {
     assert_eq!(f.t_string_ok, "ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎");
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct StealthyString(String);
+
+impl FromStr for StealthyString {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // You can implement your own parsing or transformation logic here.
+        // In this example, we'll just create a StealthyString from the given &str.
+        Ok(StealthyString(s.to_string()))
+    }
+}
+
 #[test]
 fn trim_non_string_by_default() {
-    #[derive(Debug, PartialEq, Eq)]
-    struct StealthyString(String);
-
-    impl FromStr for StealthyString {
-        type Err = ();
-
-        fn from_str(s: &str) -> Result<Self, Self::Err> {
-            // You can implement your own parsing or transformation logic here.
-            // In this example, we'll just create a StealthyString from the given &str.
-            Ok(StealthyString(s.to_string()))
-        }
-    }
-
     #[derive(FromDir)]
     struct F {
         t_string_ok: StealthyString,
@@ -107,5 +107,20 @@ fn trim_non_string_by_default() {
     assert_eq!(
         f.t_string_ok,
         StealthyString("ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎".to_string())
+    );
+}
+
+#[test]
+fn attr_trim_false() {
+    #[derive(FromDir)]
+    struct F {
+        #[filestruct(trim = false)]
+        t_string_ok: StealthyString,
+    }
+
+    let f = F::from_dir(get_test_dir()).unwrap();
+    assert_eq!(
+        f.t_string_ok,
+        StealthyString("ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎\n".to_string())
     );
 }
