@@ -69,3 +69,15 @@ fn attr_file() {
     let f = F::from_dir(get_test_dir()).unwrap();
     assert_eq!(f.renamed, "ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎\n");
 }
+
+#[test]
+fn trim_string() {
+    #[derive(FromDir)]
+    struct F {
+        #[filestruct(trim = true)]
+        t_string_ok: String,
+    }
+
+    let f = F::from_dir(get_test_dir()).unwrap();
+    assert_eq!(f.t_string_ok, "ĩ ľ𝝸ᶄ𝙚 ѕ𝓉ř⍳𝕟ℊ𝚜, ṁ𝚎");
+}
