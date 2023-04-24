@@ -1,4 +1,4 @@
-# filestruct
+# filestruct | [![Tests](https://img.shields.io/github/actions/workflow/status/cdown/filestruct/ci.yml?branch=master)](https://github.com/cdown/filestruct/actions?query=branch%3Amaster)
 
 A Rust derive macro which permits reading struct values from a directory.
 
