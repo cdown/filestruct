@@ -18,20 +18,26 @@ fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Err
     for attr in &field.attrs {
         if attr.path().is_ident("filestruct") {
             attr.parse_nested_meta(|meta| {
-                if meta.path.is_ident("file") {
-                    let value = meta.value()?;
-                    let s: LitStr = value.parse()?;
-                    attrs.filename = Some(s.value());
-                } else if meta.path.is_ident("trim") {
-                    let value = meta.value()?;
-                    let b: LitBool = value.parse()?;
-                    attrs.trim = Some(b.value());
-                } else if meta.path.is_ident("relative_dir") {
-                    let value = meta.value()?;
-                    let s: LitStr = value.parse()?;
-                    attrs.relative_dir = Some(s.value());
-                } else {
-                    return Err(meta.error("unsupported attribute"));
+                let value = meta.value();
+                match meta
+                    .path
+                    .get_ident()
+                    .map_or_else(String::new, |i| i.to_string())
+                    .as_str()
+                {
+                    "file" => {
+                        let s: LitStr = value?.parse()?;
+                        attrs.filename = Some(s.value());
+                    }
+                    "trim" => {
+                        let b: LitBool = value?.parse()?;
+                        attrs.trim = Some(b.value());
+                    }
+                    "relative_dir" => {
+                        let s: LitStr = value?.parse()?;
+                        attrs.relative_dir = Some(s.value());
+                    }
+                    _ => return Err(meta.error("unsupported attribute")),
                 }
                 Ok(())
             })?;
