@@ -42,17 +42,17 @@ fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Err
 }
 
 fn make_trim_check(ty: impl ToTokens, explicit_trim: Option<bool>) -> TokenStream2 {
-    let use_dfl_bhvr = explicit_trim.is_none();
-    let trim = explicit_trim.unwrap_or(false);
-
-    quote::quote! {
-        match (#use_dfl_bhvr, TypeId::of::<#ty>() == TypeId::of::<String>(), #trim) {
-            (true, false, _) | (false, _, true) => {
-                raw_data.trim()
-            },
-            (true, true, _) | (false, _, false) => {
-                &raw_data
-            },
+    match explicit_trim {
+        Some(true) => quote::quote! { raw_data.trim() },
+        Some(false) => quote::quote! { &raw_data },
+        None => {
+            quote::quote! {
+                if TypeId::of::<#ty>() == TypeId::of::<String>() {
+                    &raw_data
+                } else {
+                    raw_data.trim()
+                }
+            }
         }
     }
 }
