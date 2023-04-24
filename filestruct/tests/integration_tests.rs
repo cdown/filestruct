@@ -136,3 +136,15 @@ fn relative_dir() {
     let f = F::from_dir(get_test_dir()).unwrap();
     assert_eq!(f.t_string_ok, "inner\n");
 }
+
+#[test]
+fn all_attributes_together() {
+    #[derive(FromDir)]
+    struct F {
+        #[filestruct(relative_dir = "inner", file = "t_string_ok", trim = true)]
+        does_not_exist: String,
+    }
+
+    let f = F::from_dir(get_test_dir()).unwrap();
+    assert_eq!(f.does_not_exist, "inner");
+}
