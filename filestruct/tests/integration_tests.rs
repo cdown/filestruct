@@ -33,6 +33,17 @@ fn err_doesnt_exist() {
 }
 
 #[test]
+fn ok_doesnt_exist_but_option() {
+    #[derive(FromDir)]
+    struct F {
+        does_not_exist: Option<u64>,
+    }
+
+    let f = F::from_dir(get_test_dir()).unwrap();
+    assert_eq!(f.does_not_exist, None);
+}
+
+#[test]
 fn attr_file() {
     #[derive(FromDir)]
     struct F {
