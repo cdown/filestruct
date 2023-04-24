@@ -161,6 +161,10 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                     #(#field_idents),*
                 })
             }
+
+            pub fn from_cwd() -> Result<Self, filestruct::Error> {
+                Self::from_dir(std::env::current_dir()?)
+            }
         }
     };
 
