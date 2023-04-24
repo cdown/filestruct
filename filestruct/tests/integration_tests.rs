@@ -90,8 +90,6 @@ impl FromStr for StealthyString {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // You can implement your own parsing or transformation logic here.
-        // In this example, we'll just create a StealthyString from the given &str.
         Ok(StealthyString(s.to_string()))
     }
 }
