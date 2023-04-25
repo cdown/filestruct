@@ -98,41 +98,42 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                     .to_owned();
             }
             match field_ty {
-                Type::Path(type_path)
-                    if type_path.path.segments.last().unwrap().ident == "Option" =>
-                {
-                    let inner_ty = match &type_path.path.segments.last().unwrap().arguments {
-                        PathArguments::AngleBracketed(inner_ty) => &inner_ty.args[0],
-                        _ => panic!("Unsupported Option type"),
-                    };
-                    let trim_check = make_trim_check(inner_ty, attributes.trim);
-                    quote::quote! {
-                        let path = dir.join(#file_name);
-                        let #field_ident: #field_ty = {
-                            if let Ok(raw_data) = fs::read_to_string(path) {
-                                let data = #trim_check;
-                                #inner_ty::from_str(data).ok()
-                            } else {
-                                None
-                            }
+                Type::Path(type_path) => {
+                    let last_seg = type_path.path.segments.last().unwrap();
+                    if last_seg.ident == "Option" {
+                        let inner_ty = match &last_seg.arguments {
+                            PathArguments::AngleBracketed(inner_ty) => &inner_ty.args[0],
+                            _ => panic!("Unsupported Option type"),
                         };
+                        let trim_check = make_trim_check(inner_ty, attributes.trim);
+                        quote::quote! {
+                            let path = dir.join(#file_name);
+                            let #field_ident: #field_ty = {
+                                if let Ok(raw_data) = fs::read_to_string(path) {
+                                    let data = #trim_check;
+                                    #inner_ty::from_str(data).ok()
+                                } else {
+                                    None
+                                }
+                            };
+                        }
+                    } else {
+                        let trim_check = make_trim_check(field_ty, attributes.trim);
+                        quote::quote! {
+                            let path = dir.join(#file_name);
+                            let raw_data = fs::read_to_string(&path)
+                                .map_err(|err| filestruct::Error::Io { file: path.clone(), err })?;
+                            let data = #trim_check;
+                            let #field_ident: #field_ty = #field_ty::from_str(data)
+                                .map_err(|_| filestruct::Error::Parse {
+                                    file: path,
+                                    input: raw_data,
+                                    ty: stringify!(#field_ty).to_string()
+                                })?;
+                        }
                     }
                 }
-                _ => {
-                    let trim_check = make_trim_check(field_ty, attributes.trim);
-                    quote::quote! {
-                        let path = dir.join(#file_name);
-                        let raw_data = fs::read_to_string(&path)
-                            .map_err(|err| filestruct::Error::Io { file: path.clone(), err })?;
-                        let data = #trim_check;
-                        let #field_ident: #field_ty = #field_ty::from_str(data)
-                            .map_err(|_| filestruct::Error::Parse {
-                                file: path,
-                                input: raw_data,
-                                ty: stringify!(#field_ty).to_string()
-                            })?;
-                    }
-                }
+                _ => panic!("Unsupported field type"),
             }
         })
         .collect::<Vec<_>>();
