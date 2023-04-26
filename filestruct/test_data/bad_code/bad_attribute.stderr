@@ -1,0 +1,5 @@
+error: unsupported attribute
+ --> test_data/bad_code/bad_attribute.rs
+  |
+  |         #[filestruct(wagwan)]
+  |                      ^^^^^^
