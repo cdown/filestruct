@@ -1,0 +1,5 @@
+error: FromDir only supports Type::Path types
+ --> test_data/bad_code/inner_unit_type.rs
+  |
+  |     struct F {
+  |            ^

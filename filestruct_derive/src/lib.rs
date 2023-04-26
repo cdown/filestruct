@@ -144,7 +144,11 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                     }
                 }
             }
-            _ => panic!("Unsupported field type"),
+            _ => {
+                return syn::Error::new(span, "FromDir only supports Type::Path types")
+                    .to_compile_error()
+                    .into()
+            }
         };
         field_parsers.push(tok);
     }
