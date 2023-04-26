@@ -159,7 +159,7 @@ fn all_attributes_together() {
 }
 
 #[test]
-fn no_enums() {
+fn compile_failures() {
     let t = trybuild::TestCases::new();
     let dir = get_test_dir();
     t.compile_fail(dir.join("bad_code/*.rs"));
