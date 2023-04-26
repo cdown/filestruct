@@ -68,12 +68,21 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let ident = input.ident;
+    let span = ident.span();
     let fields = match input.data {
         Data::Struct(data) => match data.fields {
             Fields::Named(fields) => fields,
-            _ => panic!("FromDir only supports named fields"),
+            _ => {
+                return syn::Error::new(span, "FromDir only supports named fields")
+                    .to_compile_error()
+                    .into();
+            }
         },
-        _ => panic!("FromDir only supports structs"),
+        _ => {
+            return syn::Error::new(span, "FromDir only supports structs")
+                .to_compile_error()
+                .into();
+        }
     };
 
     let field_parsers = fields

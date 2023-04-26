@@ -14,3 +14,6 @@ rust-version = "1.56.1"
 [dependencies]
 filestruct_derive = { version = "0.3.0", path = "../filestruct_derive" }
 thiserror = "1.0.40"
+
+[dev-dependencies]
+trybuild = "1.0.80"

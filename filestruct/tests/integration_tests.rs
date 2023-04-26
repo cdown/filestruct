@@ -157,3 +157,10 @@ fn all_attributes_together() {
     let f = F::from_dir(get_test_dir()).unwrap();
     assert_eq!(f.does_not_exist, "inner");
 }
+
+#[test]
+fn no_enums() {
+    let t = trybuild::TestCases::new();
+    let dir = get_test_dir();
+    t.compile_fail(dir.join("bad_code/*.rs"));
+}

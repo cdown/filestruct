@@ -1,0 +1,5 @@
+error: FromDir only supports named fields
+ --> test_data/bad_code/struct_unit.rs
+  |
+  |     struct F;
+  |            ^

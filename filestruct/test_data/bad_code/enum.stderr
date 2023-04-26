@@ -1,0 +1,5 @@
+error: FromDir only supports structs
+ --> test_data/bad_code/enum.rs
+  |
+  |     enum F {
+  |          ^
