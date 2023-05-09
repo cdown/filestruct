@@ -101,12 +101,18 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
             .filename
             .unwrap_or_else(|| field_ident.to_string());
         if let Some(relative_dir) = attributes.relative_dir {
-            file_name = [relative_dir, file_name]
+            file_name = match [relative_dir, file_name]
                 .iter()
                 .collect::<PathBuf>()
                 .to_str()
-                .unwrap()
-                .to_owned();
+            {
+                Some(s) => s.to_owned(),
+                None => {
+                    return syn::Error::new(span, "Invalid file path")
+                        .to_compile_error()
+                        .into()
+                }
+            };
         }
         let tok = match field_ty {
             Type::Path(type_path) => {
@@ -114,7 +120,11 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                 if last_seg.ident == "Option" {
                     let inner_ty = match &last_seg.arguments {
                         PathArguments::AngleBracketed(inner_ty) => &inner_ty.args[0],
-                        _ => panic!("Unsupported Option type"),
+                        _ => {
+                            return syn::Error::new(span, "Unsupported Option type")
+                                .to_compile_error()
+                                .into()
+                        }
                     };
                     let trim_check = make_trim_check(inner_ty, attributes.trim);
                     quote::quote! {
