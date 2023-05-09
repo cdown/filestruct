@@ -142,14 +142,17 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
                     let trim_check = make_trim_check(field_ty, attributes.trim);
                     quote::quote! {
                         let path = dir.join(#file_name);
-                        let raw_data = fs::read_to_string(&path)
-                            .map_err(|err| filestruct::Error::Io { file: path.clone(), err })?;
+                        let raw_data =
+                            fs::read_to_string(&path).map_err(|err| filestruct::Error::Io {
+                                file: path.clone(),
+                                err,
+                            })?;
                         let data = #trim_check;
-                        let #field_ident: #field_ty = #field_ty::from_str(data)
-                            .map_err(|_| filestruct::Error::Parse {
+                        let #field_ident: #field_ty =
+                            #field_ty::from_str(data).map_err(|_| filestruct::Error::Parse {
                                 file: path,
                                 input: raw_data,
-                                ty: stringify!(#field_ty).to_string()
+                                ty: stringify!(#field_ty).to_string(),
                             })?;
                     }
                 }
