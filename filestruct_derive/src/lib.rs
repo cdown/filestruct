@@ -16,32 +16,32 @@ fn get_attributes(field: &syn::Field) -> Result<FieldAttributes, syn::parse::Err
     let mut attrs = FieldAttributes::default();
 
     for attr in &field.attrs {
-        if attr.path().is_ident("filestruct") {
-            attr.parse_nested_meta(|meta| {
-                let value = meta.value();
-                match meta
-                    .path
-                    .get_ident()
-                    .map_or_else(String::new, |i| i.to_string())
-                    .as_str()
-                {
-                    "file" => {
-                        let s: LitStr = value?.parse()?;
-                        attrs.filename = Some(s.value());
-                    }
-                    "trim" => {
-                        let b: LitBool = value?.parse()?;
-                        attrs.trim = Some(b.value());
-                    }
-                    "relative_dir" => {
-                        let s: LitStr = value?.parse()?;
-                        attrs.relative_dir = Some(s.value());
-                    }
-                    _ => return Err(meta.error("unsupported attribute")),
+        assert!(attr.path().is_ident("filestruct"));
+
+        attr.parse_nested_meta(|meta| {
+            let value = meta.value();
+            match meta
+                .path
+                .get_ident()
+                .map_or_else(String::new, |i| i.to_string())
+                .as_str()
+            {
+                "file" => {
+                    let s: LitStr = value?.parse()?;
+                    attrs.filename = Some(s.value());
                 }
-                Ok(())
-            })?;
-        }
+                "trim" => {
+                    let b: LitBool = value?.parse()?;
+                    attrs.trim = Some(b.value());
+                }
+                "relative_dir" => {
+                    let s: LitStr = value?.parse()?;
+                    attrs.relative_dir = Some(s.value());
+                }
+                _ => return Err(meta.error("unsupported attribute")),
+            }
+            Ok(())
+        })?;
     }
 
     Ok(attrs)
