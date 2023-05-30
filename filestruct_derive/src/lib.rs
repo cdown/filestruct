@@ -85,7 +85,7 @@ pub fn from_dir(input: TokenStream) -> TokenStream {
         }
     };
 
-    let mut field_parsers = Vec::new();
+    let mut field_parsers = Vec::with_capacity(fields.named.len());
 
     for f in &fields.named {
         let field_ident = f
